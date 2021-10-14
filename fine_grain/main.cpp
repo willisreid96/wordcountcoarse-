@@ -1,4 +1,4 @@
-  #include <chrono>
+#include <chrono>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -47,12 +47,11 @@ std::vector<std::vector<std::string>> tokenizeLyrics(const std::vector<std::stri
   return ret;
 }
 
-void worker_func(std::vector<std::string> filecontent, Dictionary<std::string, int>& the_dic) {
-  for (auto & w : filecontent) {
-      the_dic.increment(w);
-    }
+void word_count(std::vector<std::string> filecontent, Dictionary<std::string, int>& my_dict) {
+  for(auto & w : filecontent) {
+    my_dict.increment(w);
+  }
 }
-
 
 int main(int argc, char **argv)
 {
@@ -80,26 +79,25 @@ int main(int argc, char **argv)
   MyHashtable<std::string, int> ht;
   Dictionary<std::string, int>& dict = ht;
 
-
-
   // write code here
-  auto start =std::chrono::steady_clock::now();
-  
-  std::vector<std::thread> workers;
-  
-  
-  // For each file make a thread
-  for (auto & filecontent: wordmap) {
-    std::thread worker_thread (worker_func, filecontent, std::ref(dict));
-    workers.push_back(std::move(worker_thread));
+  auto start = std::chrono::steady_clock::now();
+
+  std::vector<std::thread> t;
+
+  for(auto & filecontent: wordmap) {
+    std::thread thrd (word_count, filecontent, std::ref(dict));
+    t.push_back(std::move(thrd));
   }
-  
-  for (auto & w : t) {
-      if (w.joinable()) {
-          w.join();
+
+  for(auto & w : t) {
+    if (w.joinable()) {
+      w.join();
     }
   }
 
+  auto stop = std::chrono::steady_clock::now();
+  std::chrono::duration<double> total_time = stop-start;
+  
   // Check Hash Table Values 
   /* (you can uncomment, but this must be commented out for tests)
   for (auto it : dict) {
@@ -107,13 +105,10 @@ int main(int argc, char **argv)
       std::cout << it.first << " " << it.second << std::endl;
   }
   */
-  // Stop Timer
-  auto stop = std::chrono::steady_clock::now();
-  std::chrono::duration<double> time_elapsed = stop-start;
-  std::cerr << time_elapsed.count()<<"\n";
 
   // Do not touch this, need for test cases
   std::cout << ht.get(testWord) << std::endl;
+  std::cerr << total_time.count()<<"\n";
 
   return 0;
 }
